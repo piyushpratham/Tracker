@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Hello, PUNK!</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+      <h1 class="title">Hello World! </h1>
+      <p id="currentTime"></p>
+      <script src="script.js"></script>
+  </body>
+</html><!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Life Manager — All-in-One Dashboard</title>
+
+  <!-- Libraries -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.8/main.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.8/index.global.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/daygrid@6.1.8/index.global.min.js"></script>
+
+  <style>
+    :root{
+      --bg:#ffffff; --card:#fbfdff; --muted:#6b7280; --accent1:#6a11cb; --accent2:#2575fc; --accent:#667eea; --glass: rgba(255,255,255,0.6);
+      --radius:12px; --gap:18px; --pad:18px; --shadow:0 8px 22px rgba(15,23,42,0.06);
+    }
+    [data-theme="dark"]{
+      --bg:#0f1724; --card:#0b1220; --muted:#94a3b8; --accent1:#8b5cf6; --accent2:#60a5fa; --accent:#6d28d9; --glass: rgba(10,12,20,0.55);
+      --shadow:0 8px 22px rgba(2,6,23,0.6);
+    }
+    *{box-sizing:border-box}
+    body{font-family:Poppins,system-ui,-apple-system,Segoe UI,Roboto,'Helvetica Neue',Arial; margin:0;background:var(--bg);color:var(--muted);-webkit-font-smoothing:antialiased}
+
+    header{background:linear-gradient(90deg,var(--accent1),var(--accent2));color:white;padding:18px;border-bottom-left-radius:18px;border-bottom-right-radius:18px}
+    .header-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:12px}
+    h1{margin:0;font-weight:600;font-size:20px}
+    .header-right{display:flex;align-items:center;gap:10px}
+    .theme-btn{background:transparent;border:1px solid rgba(255,255,255,0.12);color:white;padding:8px 10px;border-radius:10px;cursor:pointer}
+    .quote{font-style:italic;font-size:13px;color:rgba(255,255,255,0.9)}
+
+    .container{max-width:1200px;margin:22px auto;padding:0 16px;display:grid;grid-template-columns:repeat(12,1fr);gap:var(--gap)}
+    .card{grid-column:span 4;background:var(--card);padding:var(--pad);border-radius:var(--radius);box-shadow:var(--shadow);color:var(--muted)}
+
+    /* wide cards */
+    .col-12{grid-column:1 / -1}
+    .col-8{grid-column:span 8}
+    .col-6{grid-column:span 6}
+    .col-4{grid-column:span 4}
+
+    h2{margin:0 0 8px 0;color:var(--accent)}
+    label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
+    input,textarea,select{width:100%;padding:10px;border-radius:10px;border:1px solid rgba(0,0,0,0.06);background:transparent;color:inherit}
+    textarea{min-height:80px}
+    .btn{display:inline-block;padding:10px 12px;border-radius:10px;border:0;background:linear-gradient(90deg,var(--accent2),var(--accent1));color:white;cursor:pointer}
+    ul{list-style:none;padding:0;margin:0}
+    li.item{padding:10px;border-radius:8px;background:linear-gradient(180deg, rgba(255,255,255,0.4), transparent);margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+    .muted{color:var(--muted);font-size:13px}
+    .small{font-size:13px}
+    .flex{display:flex;gap:8px;align-items:center}
+
+    /* responsive grid adjustments */
+    @media (max-width:1000px){.card{grid-column:span 12}.container{padding:0 12px}}
+
+    /* chart sizing */
+    .chart-wrap{height:220px}
+
+    /* progress ring small */
+    .progress-small{width:84px;height:84px;border-radius:999px;background:var(--glass);display:flex;align-items:center;justify-content:center;font-weight:600;color:var(--accent)}
+
+    footer{max-width:1200px;margin:30px auto;text-align:center;color:var(--muted);padding-bottom:40px}
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div>
+      <h1>Life Manager — Dashboard</h1>
+      <div class="quote" id="quote">Keep going — one step at a time.</div>
+    </div>
+    <div class="header-right">
+      <div class="muted small">Theme</div>
+      <button class="theme-btn" id="themeToggle">🌙</button>
+    </div>
+  </div>
+</header>
+
+<main class="container">
+  <!-- DAILY NOTES / JOURNAL -->
+  <section class="card col-4" id="journalCard">
+    <h2>📒 Daily Journal</h2>
+    <label for="journalText">Write today's notes</label>
+    <textarea id="journalText" placeholder="How was your day? What went well?"></textarea>
+    <div class="flex" style="margin-top:8px"><button class="btn" id="saveJournalBtn">Save Entry</button><button class="btn" id="exportJournalBtn">Export</button></div>
+    <h3 class="small" style="margin-top:12px">Recent Entries</h3>
+    <ul id="journalList"></ul>
+  </section>
+
+  <!-- TODOs -->
+  <section class="card col-4" id="todoCard">
+    <h2>✅ To‑Do Tasks</h2>
+    <label>Add task</label>
+    <input id="todoText" placeholder="Task title" />
+    <div class="flex" style="margin-top:8px"><button class="btn" id="addTodoBtn">Add</button></div>
+    <h3 class="small" style="margin-top:12px">Tasks</h3>
+    <ul id="todoList"></ul>
+  </section>
+
+  <!-- EXPENSES -->
+  <section class="card col-4" id="expenseCard">
+    <h2>💰 Expenses</h2>
+    <label>Amount (₹)</label>
+    <input id="expAmount" type="number" placeholder="200" />
+    <label>Category</label>
+    <input id="expCategory" placeholder="Food, Travel" />
+    <div class="flex"><button class="btn" id="addExpenseBtn">Add Expense</button></div>
+    <div class="chart-wrap" style="margin-top:10px"><canvas id="expenseChart"></canvas></div>
+    <h3 class="small" style="margin-top:8px">Recent</h3>
+    <ul id="expenseList"></ul>
+  </section>
+
+  <!-- WORKOUT PLANNER -->
+  <section class="card col-4" id="workoutCard">
+    <h2>🏋️ Workout Planner</h2>
+    <label>Workout</label>
+    <input id="workoutText" placeholder="Pushups / Run" />
+    <label>Date</label>
+    <input id="workoutDate" type="date" />
+    <div class="flex"><button class="btn" id="addWorkoutBtn">Add Workout</button></div>
+    <h3 class="small" style="margin-top:12px">Planned</h3>
+    <ul id="workoutList"></ul>
+  </section>
+
+  <!-- MEAL PLANNER -->
+  <section class="card col-4" id="mealCard">
+    <h2>🍽 Meal Planner</h2>
+    <label>Meal</label>
+    <input id="mealText" placeholder="Oats / Lunch / Salad" />
+    <label>Date</label>
+    <input id="mealDate" type="date" />
+    <div class="flex"><button class="btn" id="addMealBtn">Add Meal</button></div>
+    <h3 class="small" style="margin-top:12px">Planned</h3>
+    <ul id="mealList"></ul>
+  </section>
+
+  <!-- HAIRCARE -->
+  <section class="card col-4" id="haircareCard">
+    <h2>💇 Haircare Routine</h2>
+    <label>Routine</label>
+    <textarea id="haircareText" placeholder="E.g., Oil -> Shampoo -> Condition"></textarea>
+    <div class="flex"><button class="btn" id="saveHairBtn">Save</button></div>
+    <h3 class="small" style="margin-top:12px">Saved</h3>
+    <ul id="haircareList"></ul>
+  </section>
+
+  <!-- SKINCARE -->
+  <section class="card col-4" id="skincareCard">
+    <h2>💆 Skincare / Facecare</h2>
+    <label>Routine</label>
+    <textarea id="skincareText" placeholder="Cleanse -> Tone -> Serum -> Moisturize"></textarea>
+    <div class="flex"><button class="btn" id="saveSkinBtn">Save</button></div>
+    <h3 class="small" style="margin-top:12px">Saved</h3>
+    <ul id="skincareList"></ul>
+  </section>
+
+  <!-- HABITS + PROGRESS RINGS -->
+  <section class="card col-4" id="habitCard">
+    <h2>🔥 Habit Tracker</h2>
+    <label>New habit</label>
+    <input id="habitText" placeholder="Drink water / Read" />
+    <div class="flex"><button class="btn" id="addHabitBtn">Add Habit</button></div>
+    <h3 class="small" style="margin-top:12px">Habits</h3>
+    <ul id="habitList"></ul>
+    <div style="margin-top:12px;display:flex;gap:12px;align-items:center">
+      <div class="progress-small" id="progressStudy">0%</div>
+      <div class="progress-small" id="progressWorkout">0%</div>
+      <div class="progress-small" id="progressReading">0%</div>
+    </div>
+  </section>
+
+  <!-- MOOD TRACKER -->
+  <section class="card col-4" id="moodCard">
+    <h2>🙂 Mood Tracker</h2>
+    <div class="flex" style="margin-bottom:8px">
+      <button class="btn" data-mood="happy">😊 Happy</button>
+      <button class="btn" data-mood="neutral">😐 Neutral</button>
+      <button class="btn" data-mood="sad">☹️ Sad</button>
+    </div>
+    <div class="chart-wrap"><canvas id="moodChart"></canvas></div>
+  </section>
+
+  <!-- REVIEW -->
+  <section class="card col-4" id="reviewCard">
+    <h2>✍️ Weekly Review</h2>
+    <label>Write review</label>
+    <textarea id="reviewText"></textarea>
+    <div class="flex"><button class="btn" id="saveReviewBtn">Save Review</button></div>
+    <h3 class="small" style="margin-top:12px">Past Reviews</h3>
+    <ul id="reviewList"></ul>
+  </section>
+
+  <!-- CALENDAR (full width) -->
+  <section class="card col-12" id="calendarCard">
+    <h2>📅 Calendar</h2>
+    <div id="calendar"></div>
+  </section>
+
+  <!-- ANALYTICS (full width) -->
+  <section class="card col-12" id="analyticsCard">
+    <h2>📊 Analytics</h2>
+    <div class="chart-wrap"><canvas id="analyticsChart"></canvas></div>
+  </section>
+
+</main>
+
+<footer>Save this HTML file and open it in your browser. All data is stored locally (localStorage). You can host the file on GitHub Pages or Netlify to access from any device.</footer>
+
+<script>
+// --------- Utilities & Setup ---------
+const uid = ()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const $$=(id)=>document.getElementById(id);
+function save(key,data){localStorage.setItem(key,JSON.stringify(data))}
+function load(key){return JSON.parse(localStorage.getItem(key)||'[]')}
+
+// Theme
+const themeToggle = $$('themeToggle');
+const savedTheme = localStorage.getItem('lm_theme');
+if(savedTheme) document.documentElement.setAttribute('data-theme', savedTheme);
+themeToggle.textContent = savedTheme==='dark' ? '🌞' : '🌙';
+themeToggle.addEventListener('click', ()=>{
+  const cur=document.documentElement.getAttribute('data-theme');
+  const next = cur==='dark' ? 'light' : 'dark';
+  if(next==='dark') document.documentElement.setAttribute('data-theme','dark'); else document.documentElement.removeAttribute('data-theme');
+  localStorage.setItem('lm_theme', next);
+  themeToggle.textContent = next==='dark' ? '🌞' : '🌙';
+});
+
+// Quote of the day
+const quotes=["Keep going — one step at a time.","Small steps everyday.","Consistency > Motivation.","You got this.","Progress, not perfection."];
+$$('quote').innerText = quotes[Math.floor(Math.random()*quotes.length)];
+
+// --------- Journal ----------
+let journals = load('lm_journals');
+function renderJournal(){
+  const list = $$('journalList'); list.innerHTML='';
+  journals.slice().reverse().forEach(j=>{
+    const li=document.createElement('li'); li.className='item';
+    li.innerHTML = `<div><div style='font-weight:600;color:var(--accent)'>${j.date}</div><div class='small'>${j.text}</div></div><div class='muted small'> </div>`;
+    list.appendChild(li);
+  });
+}
+$$('saveJournalBtn').addEventListener('click', ()=>{
+  const txt = $$('journalText').value.trim(); if(!txt) return alert('Write something');
+  journals.push({id:uid(),date:new Date().toLocaleString(),text:txt}); save('lm_journals',journals); $$('journalText').value=''; renderJournal(); updateAnalytics();});
+renderJournal();
+
+// Export Journal
+$$('exportJournalBtn').addEventListener('click', ()=>{
+  const blob = new Blob([JSON.stringify(journals, null, 2)], {type:'application/json'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download='journal.json'; a.click();
+});
+
+// ---------- Todos ----------
+let todos = load('lm_todos');
+function renderTodos(){ const ul=$$('todoList'); ul.innerHTML=''; todos.forEach((t,i)=>{const li=document.createElement('li'); li.className='item'; li.innerHTML=`<div><input type='checkbox' ${t.done? 'checked':''} onchange='toggleTodo(${i})' /> <strong style="margin-left:8px">${t.text}</strong></div><div><button onclick='deleteTodo(${i})' class='btn'>Delete</button></div>`; ul.appendChild(li);})}
+window.toggleTodo = (i)=>{todos[i].done=!todos[i].done; save('lm_todos',todos); renderTodos(); updateAnalytics();}
+window.deleteTodo=(i)=>{todos.splice(i,1); save('lm_todos',todos); renderTodos(); updateAnalytics();}
+$$('addTodoBtn').addEventListener('click', ()=>{const t=$$('todoText').value.trim(); if(!t) return; todos.push({text:t,done:false}); save('lm_todos',todos); $$('todoText').value=''; renderTodos(); updateCalendar();});
+renderTodos();
+
+// ---------- Expenses ----------
+let expenses = load('lm_expenses');
+function renderExpenses(){ const ul=$$('expenseList'); ul.innerHTML=''; expenses.slice().reverse().forEach(e=>{const li=document.createElement('li'); li.className='item'; li.innerHTML=`<div><strong>₹${e.amount}</strong><div class='small'>${e.category} • ${e.date}</div></div><div><button onclick='deleteExpense("${e.id}")' class='btn'>Delete</button></div>`; ul.appendChild(li);}); if(window.expenseChart) expenseChart.destroy(); const ctx=document.getElementById('expenseChart').getContext('2d'); expenseChart = new Chart(ctx,{type:'bar',data:{labels:expenses.map(e=>e.category),datasets:[{label:'Expenses',data:expenses.map(e=>e.amount),backgroundColor:getComputedStyle(document.documentElement).getPropertyValue('--accent')} ]},options:{responsive:true,scales:{y:{beginAtZero:true}}}})}
+$$('addExpenseBtn').addEventListener('click', ()=>{const amt=Number($$('expAmount').value); const cat=$$('expCategory').value||'Misc'; if(!amt) return alert('Enter amount'); expenses.push({id:uid(),amount:amt,category:cat,date:new Date().toLocaleDateString()}); save('lm_expenses',expenses); $$('expAmount').value=''; $$('expCategory').value=''; renderExpenses(); updateAnalytics(); updateCalendar();});
+window.deleteExpense=(id)=>{expenses=expenses.filter(e=>e.id!==id); save('lm_expenses',expenses); renderExpenses(); updateAnalytics();}
+renderExpenses();
+
+// ---------- Workouts ----------
+let workouts = load('lm_workouts');
+function renderWorkouts(){ const ul=$$('workoutList'); ul.innerHTML=''; workouts.slice().reverse().forEach(w=>{const li=document.createElement('li'); li.className='item'; li.innerHTML=`<div><strong>${w.name}</strong><div class='small'>${w.date}</div></div><div><button onclick='deleteWorkout("${w.id}")' class='btn'>Delete</button></div>`; ul.appendChild(li);}); updateCalendar();}
+$$('addWorkoutBtn').addEventListener('click', ()=>{const name=$$('workoutText').value.trim(); const date=$$('workoutDate').value||new Date().toISOString().slice(0,10); if(!name) return; workouts.push({id:uid(),name,date}); save('lm_workouts',workouts); $$('workoutText').value=''; $$('workoutDate').value=''; renderWorkouts(); updateAnalytics();});
+window.deleteWorkout=(id)=>{workouts=workouts.filter(w=>w.id!==id); save('lm_workouts',workouts); renderWorkouts(); updateAnalytics();}
+renderWorkouts();
+
+// ---------- Meals ----------
+let meals = load('lm_meals');
+function renderMeals(){ const ul=$$('mealList'); ul.innerHTML=''; meals.slice().reverse().forEach(m=>{const li=document.createElement('li'); li.className='item'; li.innerHTML=`<div><strong>${m.name}</strong><div class='small'>${m.date}</div></div><div><button onclick='deleteMeal("${m.id}")' class='btn'>Delete</button></div>`; ul.appendChild(li);}); updateCalendar();}
+$$('addMealBtn').addEventListener('click', ()=>{const name=$$('mealText').value.trim(); const date=$$('mealDate').value||new Date().toISOString().slice(0,10); if(!name) return; meals.push({id:uid(),name,date}); save('lm_meals',meals); $$('mealText').value=''; $$('mealDate').value=''; renderMeals(); updateAnalytics();});
+window.deleteMeal=(id)=>{meals=meals.filter(m=>m.id!==id); save('lm_meals',meals); renderMeals(); updateAnalytics();}
+renderMeals();
+
+// ---------- Haircare & Skincare ----------
+let haircare = load('lm_hair') || [];
+let skincare = load('lm_skin') || [];
+$$('saveHairBtn').addEventListener('click', ()=>{const t=$$('haircareText').value.trim(); if(!t) return; haircare=[{id:uid(),text:t}]; save('lm_hair',haircare); renderHair();});
+$$('saveSkinBtn').addEventListener('click', ()=>{const t=$$('skincareText').value.trim(); if(!t) return; skincare=[{id:uid(),text:t}]; save('lm_skin',skincare); renderSkin();});
+function renderHair(){const ul=$$('haircareList'); ul.innerHTML=''; haircare.forEach(h=>{const li=document.createElement('li'); li.className='item'; li.innerHTML=`<div>${h.text}</div><div><button class='btn' onclick='editHair("${h.id}")'>Edit</button></div>`; ul.appendChild(li)})}
+function renderSkin(){const ul=$$('skincareList'); ul.innerHTML=''; skincare.forEach(s=>{const li=document.createElement('li'); li.className='item'; li.innerHTML=`<div>${s.text}</div><div><button class='btn' onclick='editSkin("${s.id}")'>Edit</button></div>`; ul.appendChild(li)})}
+window.editHair=(id)=>{const h=haircare.find(x=>x.id===id); if(!h) return; const newText=prompt('Edit hair routine',h.text); if(newText!==null){h.text=newText; save('lm_hair',haircare); renderHair();}}
+window.editSkin=(id)=>{const s=skincare.find(x=>x.id===id); if(!s) return; const newText=prompt('Edit skin routine',s.text); if(newText!==null){s.text=newText; save('lm_skin',skincare); renderSkin();}}
+renderHair(); renderSkin();
+
+// ---------- Habits & Progress ----------
+let habitsData = load('lm_habits');
+function renderHabits(){const ul=$$('habitList'); ul.innerHTML=''; habitsData.forEach((h,i)=>{const li=document.createElement('li'); li.className='item'; li.innerHTML=`<div><input type='checkbox' ${h.done? 'checked':''} onchange='toggleHabit(${i})'/> <strong style='margin-left:8px'>${h.text}</strong><div class='small'>Streak: ${h.streak||0}</div></div><div><button class='btn' onclick='deleteHabit(${i})'>Delete</button></div>`; ul.appendChild(li)});
+  // update small progress demos
+  $$('progressStudy').innerText = `${calcProgress('Study')}%`;
+  $$('progressWorkout').innerText = `${calcProgress('Workout')}%`;
+  $$('progressReading').innerText = `${calcProgress('Reading')}%`;
+}
+function calcProgress(name){ // simple demo calc based on habits count
+  const total=habitsData.length||1; const matched=habitsData.filter(h=>h.text.toLowerCase().includes(name.toLowerCase()) && h.done).length; return Math.round((matched/total)*100);
+}
+$$('addHabitBtn').addEventListener('click', ()=>{const t=$$('habitText').value.trim(); if(!t) return; habitsData.push({id:uid(),text:t,done:false,streak:0}); save('lm_habits',habitsData); $$('habitText').value=''; renderHabits();});
+window.toggleHabit=(i)=>{habitsData[i].done=!habitsData[i].done; if(habitsData[i].done) habitsData[i].streak=(habitsData[i].streak||0)+1; else habitsData[i].streak=0; save('lm_habits',habitsData); renderHabits(); updateAnalytics();}
+window.deleteHabit=(i)=>{habitsData.splice(i,1); save('lm_habits',habitsData); renderHabits();}
+renderHabits();
+
+// ---------- Mood Tracker ----------
+let moods = load('lm_moods'); const moodCtx = document.getElementById('moodChart'); let moodChart;
+document.querySelectorAll('#moodCard .btn').forEach(b=>b.addEventListener('click', ()=>{const mood = b.getAttribute('data-mood')||b.innerText; moods.push({id:uid(),mood,date:new Date().toLocaleDateString()}); save('lm_moods',moods); renderMood();}))
+function renderMood(){ const counts = moods.reduce((acc,m)=>{acc[m.mood]=(acc[m.mood]||0)+1; return acc;},{}) ; const labels=Object.keys(counts); const data=Object.values(counts); if(moodChart) moodChart.destroy(); moodChart=new Chart(moodCtx.getContext('2d'),{type:'pie',data:{labels, datasets:[{data, backgroundColor:['#4caf50','#ffc107','#f44336','#90caf9']} ]}})}
+renderMood();
+
+// ---------- Reviews ----------
+let reviews = load('lm_reviews'); function renderReviews(){ const ul=$$('reviewList'); ul.innerHTML=''; reviews.slice().reverse().forEach(r=>{const li=document.createElement('li'); li.className='item'; li.innerHTML=`<div><strong>${r.date}</strong><div class='small'>${r.text}</div></div>`; ul.appendChild(li) })}
+$$('saveReviewBtn').addEventListener('click', ()=>{const t=$$('reviewText').value.trim(); if(!t) return; reviews.push({id:uid(),date:new Date().toLocaleDateString(),text:t}); save('lm_reviews',reviews); $$('reviewText').value=''; renderReviews();})
+renderReviews();
+
+// ---------- Analytics Chart ----------
+let analyticsChart; function updateAnalytics(){ const ctx = $$('analyticsChart').getContext('2d'); const totalExp = expenses.reduce((s,e)=>s+Number(e.amount||0),0); const totalWorkouts = workouts.length; const totalMeals = meals.length; const totalTodos = todos.filter(t=>!t.done).length; if(analyticsChart) analyticsChart.destroy(); analyticsChart = new Chart(ctx,{type:'bar',data:{labels:['Expenses','Workouts','Meals','Open Tasks'],datasets:[{label:'This Dashboard',data:[totalExp,totalWorkouts,totalMeals,totalTodos],backgroundColor:[getComputedStyle(document.documentElement).getPropertyValue('--accent1'),getComputedStyle(document.documentElement).getPropertyValue('--accent2'),'#ffc107','#ef4444']} ]},options:{responsive:true,scales:{y:{beginAtZero:true}}}})}
+updateAnalytics();
+
+// ---------- Calendar (FullCalendar) ----------
+function updateCalendar(){ if(!window.FullCalendar) return; const events=[];
+  todos.forEach(t=>{ if(t.date) events.push({title:t.text,start:t.date,allDay:true,backgroundColor:'#6a11cb'})});
+  workouts.forEach(w=>events.push({title:'🏋️ '+w.name,start:w.date,allDay:true,backgroundColor:'#2575fc'}));
+  meals.forEach(m=>events.push({title:'🍽 '+m.name,start:m.date,allDay:true,backgroundColor:'#4caf50'}));
+  // render
+  const calendarEl = document.getElementById('calendar'); calendarEl.innerHTML=''; const calendar = new FullCalendar.Calendar(calendarEl,{initialView:'dayGridMonth',events}); calendar.render();}
+updateCalendar();
+
+// ---------- Initialization ----------
+function init(){ renderJournal(); renderTodos(); renderExpenses(); renderWorkouts(); renderMeals(); renderHair(); renderSkin(); renderHabits(); renderMood(); renderReviews(); updateAnalytics(); updateCalendar(); }
+init();
+
+</script>
+</body>
+</html>
